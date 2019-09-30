@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import json
 from django.contrib import admin
 from django.contrib.admin.utils import label_for_field
 from django.template.response import TemplateResponse
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.utils.translation import ugettext_lazy as _
 from django.utils.functional import Promise
 from django.utils.encoding import force_text
@@ -17,6 +18,7 @@ from django import forms
 from catalog.models import TreeItem
 from catalog.utils import get_catalog_models
 from catalog.grid import GridRow
+from catalog.settings import TREEITEM_ROOT_ELEMENT_NAME
 
 
 class LazyEncoder(DjangoJSONEncoder):
@@ -47,9 +49,9 @@ class CatalogAdmin(admin.ModelAdmin):
             'opts': opts,
             'app_config': app_config,
             'site_header': self.admin_site.site_header,
+            'root_title': TREEITEM_ROOT_ELEMENT_NAME,
         }
-        return TemplateResponse(request, self.change_list_template,
-                                context, current_app=self.admin_site.name)
+        return TemplateResponse(request, self.change_list_template, context)
 
     def has_add_permission(self, request):
         """
@@ -69,12 +71,10 @@ class CatalogAdmin(admin.ModelAdmin):
             for field_name in admin_cls.list_display:
                 if field_name not in field_names:
                     if field_name == '__str__' or field_name == '__unicode__':
-                        field_label = _(u'Object name')
+                        field_label = _('Object name')
                         fields.insert(0, [field_name, field_label])
                     else:
-                        field_label = unicode(label_for_field(field_name,
-                                                              model_cls,
-                                                              admin_cls))
+                        field_label = label_for_field(field_name, model_cls, admin_cls)
                         fields.append([field_name, field_label])
                     field_names.append(field_name)
         return fields
@@ -93,7 +93,7 @@ class CatalogAdmin(admin.ModelAdmin):
         if obj.leaf is True:
             node['type'] = 'leaf'
         node['id'] = treeitem.id
-        node['text'] = treeitem.__unicode__()
+        node['text'] = obj.__str__()
         node['data'] = {}
         change_link = reverse('admin:{0}_{1}_change'. \
                               format(obj.__class__._meta.app_label,
@@ -116,7 +116,7 @@ class CatalogAdmin(admin.ModelAdmin):
                                           format(model_cls._meta.app_label,
                                                  model_cls._meta.model_name))
                                   + '?target={}'.format(treeitem.id),
-                           'label': _(u'Add %(model_name)s') %
+                           'label': _('Add %(model_name)s') %
                                     {
                                     'model_name': model_cls._meta.verbose_name
                                     }
@@ -154,7 +154,7 @@ class CatalogAdmin(admin.ModelAdmin):
                     node = TreeItem.objects.get(id=item_id)
                     target = TreeItem.objects.get(id=target_id)
                 except TreeItem.DoesNotExist:
-                    message = _(u'Object does not exist')
+                    message = _('Object does not exist')
                     return JsonResponse({'status': 'error',
                                          'type_message': 'error',
                                          'message': message},
@@ -163,8 +163,8 @@ class CatalogAdmin(admin.ModelAdmin):
                 if slug is not None and \
                         not TreeItem.check_slug(target, position,
                                                 node.get_slug(), node=node):
-                    message = _(u'Invalid move. Slug %(slug)s exist in '
-                                u'this level') % {'slug': node.get_slug()}
+                    message = _('Invalid move. Slug %(slug)s exist in '
+                                'this level') % {'slug': node.get_slug()}
                     return JsonResponse({
                                         'status': 'error',
                                         'type_message': 'error',
@@ -172,10 +172,10 @@ class CatalogAdmin(admin.ModelAdmin):
                                         },
                                         encoder=LazyEncoder)
                 node.move_to(target, position)
-                message = _(u'Successful move')
+                message = _('Successful move')
                 return JsonResponse({'status': 'OK', 'type_message': 'info',
                                      'message': message}, encoder=LazyEncoder)
-        message = _(u'Bad request')
+        message = _('Bad request')
         return JsonResponse({'status': 'error', 'type_message': 'error',
                              'message': message}, encoder=LazyEncoder)
 
@@ -191,7 +191,7 @@ class CatalogAdmin(admin.ModelAdmin):
             try:
                 treeitem = TreeItem.objects.get(id=data['id'])
             except TreeItem.DoesNotExist:
-                message = _(u'Object does not exist')
+                message = _('Object does not exist')
                 return JsonResponse({'status': 'error',
                                      'type_message': 'error',
                                      'message': message},
@@ -214,18 +214,18 @@ class CatalogAdmin(admin.ModelAdmin):
                     except FieldDoesNotExist:
                         pass
             if errors:
-                message = _(u'Correct the mistakes')
+                message = _('Correct the mistakes')
                 return JsonResponse({'errors': errors,
                                      'status': 'error',
                                      'type_message': 'error',
                                      'message': message},
                                     encoder=LazyEncoder)
             obj.save()
-            message = _(u'Save changes')
+            message = _('Save changes')
             return JsonResponse({'status': 'OK', 'type_message': 'info',
                                  'message': message}, encoder=LazyEncoder)
         else:
-            message = _(u'Bad request')
+            message = _('Bad request')
             return JsonResponse({'status': 'error', 'type_message': 'error',
                                  'message': message}, encoder=LazyEncoder)
 
@@ -241,15 +241,15 @@ class CatalogAdmin(admin.ModelAdmin):
             try:
                 treeitem = TreeItem.objects.get(id=item_id)
                 treeitem.delete()
-                message = _(u'Deleted object')
+                message = _('Deleted object')
                 return JsonResponse({'status': 'OK', 'type_message': 'info',
                                      'message': message}, encoder=LazyEncoder)
             except TreeItem.DoesNotExist:
-                message = _(u'Object does not exist')
+                message = _('Object does not exist')
                 return JsonResponse({'status': 'error',
                                      'type_message': 'error',
                                      'message': message}, encoder=LazyEncoder)
-        message = _(u'Bad request')
+        message = _('Bad request')
         return JsonResponse({'status': 'error', 'type_message': 'error',
                              'message': message}, encoder=LazyEncoder)
 
@@ -267,9 +267,14 @@ class CatalogAdmin(admin.ModelAdmin):
         response = {}
         if nodes_qs.count() == 0:
             return JsonResponse(response)
-
-        distinct_node_types = nodes_qs.order_by('content_type__id').\
-            distinct('content_type__id')
+        distinct_node_types = []
+        try:
+            distinct_node_types = nodes_qs.order_by('content_type__id').distinct('content_type__id')
+            distinct_node_types.exists()
+        except NotImplementedError:
+            # backend sqlite3 not supported DISTINCT operation
+            from django.db.models import Min
+            distinct_node_types = nodes_qs.order_by('content_type__id').annotate(content_type__id=Min('content_type__id'))
         models = [node.content_object.__class__
                   for node in distinct_node_types]
         fields = self.get_display_fields(models)
@@ -287,7 +292,7 @@ class CatalogAdmin(admin.ModelAdmin):
         return JsonResponse(response, safe=False, encoder=LazyEncoder)
 
     def get_urls(self):
-        return patterns('',
+        return [
             url(r'^tree/$', self.admin_site.admin_view(self.json_tree)),
             url(r'^move/$', self.admin_site.admin_view(self.move_tree_item)),
             url(r'^delete/$',
@@ -298,7 +303,7 @@ class CatalogAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.list_children)),
             url(r'^list_children/',
                 self.admin_site.admin_view(self.list_children)),
-        ) + super(CatalogAdmin, self).get_urls()
+        ] + super(CatalogAdmin, self).get_urls()
 
 admin.site.register(TreeItem, CatalogAdmin)
 
@@ -306,7 +311,6 @@ admin.site.register(TreeItem, CatalogAdmin)
 class CatalogItemBaseAdmin(admin.ModelAdmin):
 
     def response_change(self, request, obj):
-
         if '_popup' in request.POST:
             return HttpResponse('''
                <script type="text/javascript">
@@ -350,8 +354,8 @@ class CatalogItemBaseAdmin(admin.ModelAdmin):
                         pass
                     position = 'last-child'
                 if not TreeItem.check_slug(target, position, slug, node):
-                    message = _(u'Slug %(slug)s already exist in this '
-                                u'level') % {'slug': self.cleaned_data['slug']}
+                    message = _('Slug %(slug)s already exist in this '
+                                'level') % {'slug': self.cleaned_data['slug']}
                     raise forms.ValidationError(message)
                 return slug
 

@@ -70,7 +70,7 @@ class CatalogChildren(Tag):
             queryset = get_content_objects(children)
         if varname:
             context[varname] = queryset
-            return u''
+            return ''
         else:
             context['children'] = queryset
             return render_to_string(self.template, context)

@@ -1,6 +1,7 @@
+from __future__ import unicode_literals
 from django.contrib.sitemaps import GenericSitemap
 from django.db.models import FieldDoesNotExist
-from utils import get_catalog_models
+from catalog.utils import get_catalog_models
 
 
 class CatalogSitemap(GenericSitemap):

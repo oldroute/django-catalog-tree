@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.core.urlresolvers import reverse, NoReverseMatch
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
-from django.utils import timezone
+from django.utils.encoding import python_2_unicode_compatible
 from django.db import models
 from mptt.models import MPTTModel
+from catalog import settings
 
 
+@python_2_unicode_compatible
 class TreeItem(MPTTModel):
     class Meta:
-        verbose_name = _('Catalog structure')
-        verbose_name_plural = _('Catalog structure')
+        verbose_name = settings.TREEITEM_VERBOSE_NAME
+        verbose_name_plural = settings.TREEITEM_VERBOSE_NAME_PLURAL
         ordering = ['tree_id', 'lft']
 
     parent = models.ForeignKey('self', related_name='children',
@@ -21,13 +24,13 @@ class TreeItem(MPTTModel):
 
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey()
+    content_object = GenericForeignKey()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.content_object:
-            return unicode(self.content_object)
+            return self.content_object
         else:
-            return unicode(_('Catalog Tree item'))
+            return _('Catalog Tree item')
 
     def move_to(self, target, position='first-child'):
         """
@@ -71,10 +74,9 @@ class CatalogBase(models.Model):
         abstract = True
 
     leaf = False
-    tree = generic.GenericRelation('TreeItem')
+    tree = GenericRelation(TreeItem)
     show = models.BooleanField(verbose_name=_('Show on site'), default=True)
-    last_modified = models.DateTimeField(verbose_name=_('Datetime last modified'),
-                                         auto_now=True, default=timezone.now())
+    last_modified = models.DateTimeField(verbose_name=_('Datetime last modified'), auto_now=True)
     FULL_URL_KEY = '%s_%d_url'
 
     def cache_url_key(self):

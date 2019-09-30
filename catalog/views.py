@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from django.views.generic import DetailView, TemplateView
 from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist, FieldError, ImproperlyConfigured
-from models import TreeItem
-from utils import get_catalog_models, get_content_objects
+from catalog.models import TreeItem
+from catalog.utils import get_catalog_models, get_content_objects
+from catalog.settings import TEMPLATES_FOLDER
 
 
 class CatalogRootView(TemplateView):
     """
     Render catalog root page
     """
-    template_name = 'catalog/root.html'
+    template_name = '{}/root.html'.format(TEMPLATES_FOLDER)
 
     def get_context_data(self, **kwargs):
         context = super(CatalogRootView, self).get_context_data(**kwargs)
@@ -29,7 +31,7 @@ class CatalogItemView(DetailView):
             names = super(CatalogItemView, self).get_template_names()
         except ImproperlyConfigured:
             names = []
-        names.append("catalog/{}.html".format(self.object._meta.model_name))
+        names.append("{}/{}.html".format(TEMPLATES_FOLDER, self.object._meta.model_name))
         return names
 
     def get_object(self, queryset=None):

@@ -20,8 +20,10 @@
     {{ block.super }}
     {{ media.js }}
     <script src="/static/admin/js/core.js"></script>
+    <script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.js">  </script>
+    <script type="text/javascript" src="/static/admin/js/jquery.init.js"></script>
     <script src="/static/admin/js/admin/RelatedObjectLookups.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
     <script src="{% static 'catalog/admin/jquery-ui/jquery-ui.min.js' %}"></script>
     <script src="{% static 'catalog/admin/underscore.min.js' %}"></script>
     <script src="{% static 'catalog/admin/jquery.cookie.js' %}"></script>
@@ -74,7 +76,8 @@
                                placeholder="{% trans 'search, (esc) for clear' %}">
                     </div>
                     <div id="catalog-root-btn" class="jstree-default">
-                        <i class="jstree-icon jstree-themeicon" role="presentation"></i>{% trans 'Catalog' %}
+                        <i class="jstree-icon jstree-themeicon" role="presentation"></i>
+                        {{ root_title }}
                     </div>
                     <div id="tree_container"></div>
                 </div>

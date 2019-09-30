@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.db.models import signals
 from django.core.cache import cache
 from catalog.utils import get_catalog_models

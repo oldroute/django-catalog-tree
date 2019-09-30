@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from django.contrib import admin
 from django.contrib.admin.utils import display_for_field
 from django.db.models.fields import FieldDoesNotExist
 from django.core.urlresolvers import reverse
-from django.contrib.admin.views.main import EMPTY_CHANGELIST_VALUE
+from mptt.templatetags.mptt_admin import get_empty_value_display
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.encoding import smart_text
 from django.template.defaultfilters import linebreaksbr
@@ -49,11 +50,9 @@ class GridField(object):
         correct_values, modelfield = None, None        
         if self.field_name in self.admin_cls.list_display:
             try:
-                modelfield, attr, val = \
-                    admin.utils.lookup_field(self.field_name, self.obj,
-                                             self.admin_cls)
+                modelfield, attr, val = admin.utils.lookup_field(self.field_name, self.obj, self.admin_cls)
             except (AttributeError, ValueError, ObjectDoesNotExist):
-                result_repr = EMPTY_CHANGELIST_VALUE
+                result_repr = get_empty_value_display(self.admin_cls)
             else:
                 if modelfield is None:
                     boolean = getattr(attr, "boolean", False)
